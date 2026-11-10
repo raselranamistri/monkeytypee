@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monkeytypee - RGB & Custom Theme Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #1c1d1f;
+  --sub: #54585d;
+  --text: #d1d0c5;
+  --main: #00ffcc;
+  --main-rgb: 0, 255, 204;
+  --error: #ff4757;
+  --error-rgb: 255, 71, 87;
+  --fs: 1.8rem;
+  --caret-glow: rgba(0, 255, 204, 0.8);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--sub);
+  font-family: 'Roboto Mono', monospace;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+}
+
+/* Background Particle Canvas */
+#bgCanvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+header, main, footer, .config, .langRow {
+  position: relative;
+  z-index: 2;
+}
+
+button {
+  background: none;
+  border: none;
+  color: var(--sub);
+  font-family: inherit;
+  cursor: pointer;
+  font-size: .85rem;
+  padding: .35rem .65rem;
+  border-radius: .4rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+button:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+button.active { color: var(--main); text-shadow: 0 0 10px rgba(var(--main-rgb), 0.4); }
+.hidden { display: none !important; }
+.kbd { background: rgba(255,255,255,.08); border-radius: .3rem; padding: .15rem .4rem; font-size: .75rem; color: var(--sub); border: 1px solid rgba(255,255,255,0.05); }
+
+/* ---------- Animations ---------- */
+@keyframes neonShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px) rotate(-1deg); }
+  40% { transform: translateX(5px) rotate(1deg); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(-20px) scale(0.96); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(var(--main-rgb), 0.2); }
+  50% { box-shadow: 0 0 25px rgba(var(--main-rgb), 0.6); }
+}
+
+/* Rainbow Text Effect */
+.rainbow-text {
+  background: linear-gradient(90deg, #ff007f, #7f00ff, #00f0ff, #00ff7f, #ff007f);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowScroll 3s linear infinite;
+}
+@keyframes rainbowScroll {
+  to { background-position: 200% center; }
+}
+
+/* ---------- Header ---------- */
+header { display: flex; align-items: center; gap: 1rem; padding: 1.2rem 2.5rem; }
+.logo { display: flex; align-items: center; gap: .7rem; color: var(--text); font-size: 1.4rem; font-weight: 700; user-select: none; letter-spacing: -0.5px; }
+.logo svg { width: 32px; height: 24px; fill: var(--main); transition: fill 0.3s ease, transform 0.3s ease; filter: drop-shadow(0 0 8px var(--main)); }
+.logo:hover svg { transform: rotate(-5deg); }
+.logo .dim { color: var(--sub); font-size: 0.95rem; font-weight: 400; margin-left: -4px; }
+header .spacer { flex: 1; }
+.iconBtn { font-size: 1.1rem; padding: 0.45rem 0.7rem; }
+
+/* ---------- Config Bar ---------- */
+.config { display: flex; justify-content: center; align-items: center; gap: .8rem; flex-wrap: wrap; padding: .4rem 1rem; }
+.group { display: flex; gap: .25rem; background: rgba(0,0,0,.25); border-radius: .6rem; padding: .3rem; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.05); }
+.langRow { display: flex; justify-content: center; gap: 1rem; margin: .8rem 0 .2rem; position: relative; z-index: 10; }
+#langMenu { position: absolute; top: 2.2rem; background: var(--bg); border: 1px solid var(--sub); border-radius: .6rem; z-index: 50; display: flex; flex-direction: column; min-width: 150px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: modalFadeIn 0.15s ease; }
+#langMenu button { text-align: left; padding: 0.6rem 1rem; border-radius: 0; }
+#langMenu button:hover { background: rgba(255,255,255,0.08); }
+
+/* ---------- Pace Car Progress Bar ---------- */
+.pace-container { width: 100%; max-width: 950px; margin: 0 auto 0.8rem; background: rgba(0,0,0,0.25); height: 8px; border-radius: 4px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.05); }
+.pace-bar-player { height: 100%; background: var(--main); width: 0%; transition: width 0.15s linear; box-shadow: 0 0 10px var(--main); position: absolute; left: 0; top: 0; }
+.pace-bar-ghost { height: 100%; background: rgba(255,255,255,0.3); width: 0%; transition: width 0.1s linear; position: absolute; left: 0; top: 0; }
+.pace-label { text-align: center; font-size: 0.75rem; color: var(--sub); margin-bottom: 0.5rem; }
+
+/* ---------- Main Test View ---------- */
+main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 2rem; max-width: 1050px; margin: 0 auto; width: 100%; }
+.capsWarn { text-align: center; color: var(--main); margin-bottom: .4rem; font-size: .85rem; background: rgba(var(--main-rgb), 0.1); padding: 0.3rem 0.8rem; border-radius: 0.4rem; border: 1px solid rgba(var(--main-rgb), 0.3); display: inline-block; align-self: center; }
+
+.liveRow { display: flex; gap: 1.5rem; margin-bottom: 0.6rem; height: 2.8rem; align-items: center; }
+#liveMain { font-size: 2.4rem; color: var(--main); transition: color 0.2s; font-weight: 700; text-shadow: 0 0 15px rgba(var(--main-rgb), 0.3); }
+#liveWpm { font-size: 1.4rem; color: var(--sub); font-weight: 500; }
+#liveAcc { font-size: 1.1rem; color: var(--sub); margin-left: auto; }
+
+/* Typing Area */
+.typing-area { position: relative; overflow: hidden; cursor: text; min-height: 140px; }
+.focusOverlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.5); z-index: 5; font-size: 1.25rem; color: var(--text); border-radius: 0.6rem; backdrop-filter: blur(4px); cursor: pointer; transition: opacity 0.2s ease; border: 1px solid rgba(255,255,255,0.1); }
+.focusOverlay:hover { background: rgba(0,0,0,.4); }
+
+.words { display: flex; flex-wrap: wrap; font-size: var(--fs); line-height: 1.5; user-select: none; transition: transform .25s cubic-bezier(0.25, 1, 0.5, 1); position: relative; width: 100%; }
+.word { display: flex; align-items: center; margin-right: .6em; margin-bottom: .3em; border-bottom: 2px solid transparent; border-radius: 3px; padding: 0 2px; }
+.word.error { border-bottom-color: var(--error); }
+.word.neon-shake { animation: neonShake 0.3s ease-in-out; }
+
+.letter { color: var(--sub); display: inline-block; position: relative; }
+.letter.correct { color: var(--text); }
+.letter.incorrect { color: var(--error); text-shadow: 0 0 8px rgba(var(--error-rgb), 0.6); }
+.letter.extra { color: var(--error); opacity: .7; text-shadow: 0 0 8px rgba(var(--error-rgb), 0.6); }
+.letter.onCaret { color: var(--bg) !important; z-index: 1; }
+
+.caret { position: absolute; left: 0; top: 0; background: var(--main); border-radius: 2px; z-index: 2; display: none; transition: left .08s ease, top .08s ease, width .08s ease, height .08s ease; box-shadow: 0 0 14px var(--caret-glow); animation: blink 1s infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+.caret.active { display: block; }
+.caret.nosmooth { transition: none; }
+body.typing .caret { animation: none; opacity: 1 !important; }
+
+/* Keyboard Visualizer */
+.kb-visualizer { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.35rem; align-items: center; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.8rem; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); }
+.kb-row { display: flex; gap: 0.3rem; }
+.key { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: var(--sub); font-size: 0.75rem; border-radius: 0.35rem; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; user-select: none; font-weight: 500; }
+.key.space { width: 220px; }
+.key.active-key { background: var(--main); color: var(--bg); border-color: var(--main); box-shadow: 0 0 12px var(--main); font-weight: bold; }
+.key.target-key { border-color: var(--main); color: var(--main); box-shadow: inset 0 0 6px rgba(var(--main-rgb), 0.4); }
+
+/* ---------- Results Screen ---------- */
+.results { display: flex; flex-direction: column; gap: 1.5rem; align-items: center; color: var(--text); width: 100%; animation: modalFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* UPDATED RESULT TOP SECTION TO MATCH IMAGE */
+.resTop { display: flex; flex-direction: column; align-items: center; width: 100%; justify-content: center; gap: 1rem; margin-bottom: 1rem; }
+.resTopControls { display: flex; gap: 1.5rem; color: var(--sub); font-size: 0.9rem; margin-bottom: 0.5rem; }
+.resTopControls .control-item { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; transition: color 0.2s; }
+.resTopControls .control-item:hover { color: var(--text); }
+.resTopControls .control-item span.icon { font-size: 1.1rem; }
+
+.resScores { display: flex; justify-content: center; gap: 4rem; width: 100%; }
+.resCard { text-align: center; display: flex; flex-direction: column; gap: 0.2rem; }
+.resCard .lbl { color: var(--sub); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+.resCard .val { font-size: 5rem; color: var(--main); font-weight: 700; line-height: 1; text-shadow: 0 0 25px rgba(var(--main-rgb), 0.3); }
+/* Make ACC same color as WPM like in the image */
+#resAcc { color: var(--main); text-shadow: 0 0 25px rgba(var(--main-rgb), 0.3); }
+
+#chart { width: min(850px, 100%); height: 210px; background: rgba(0,0,0,0.25); border-radius: 0.6rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.05); }
+
+/* UPDATED RESULT GRID TO MATCH IMAGE */
+.resGrid { display: grid; grid-template-columns: auto auto auto auto; gap: 1rem 2.5rem; font-size: 0.95rem; background: rgba(0,0,0,0.2); padding: 1.2rem 2.5rem; border-radius: 0.6rem; border: 1px solid rgba(255,255,255,0.05); }
+.resGrid .k { color: var(--sub); text-align: right; padding-right: 0.5rem; }
+.resGrid .v { color: var(--text); font-weight: bold; text-align: left; }
+
+.slowest-keys { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
+.key-badge { background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.3); color: var(--error); padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-size: 0.8rem; }
+
+.resBtns { display: flex; gap: 1.2rem; margin-top: 0.5rem; }
+.resBtns button { font-size: 1.05rem; padding: 0.6rem 1.4rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+.resBtns button:hover { background: rgba(255,255,255,0.12); color: var(--text); border-color: var(--main); box-shadow: 0 0 10px rgba(var(--main-rgb), 0.2); }
+
+/* ---------- Footer ---------- */
+footer { padding: 1.5rem 2rem 1.2rem; font-size: .8rem; display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
+.hints { text-align: center; color: var(--sub); }
+.links { display: flex; gap: 1.4rem; justify-content: center; flex-wrap: wrap; }
+.links a { color: var(--sub); text-decoration: none; transition: color 0.2s; }
+.links a:hover { color: var(--main); }
+
+/* ---------- Modals / Panels ---------- */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; display: flex; justify-content: center; backdrop-filter: blur(6px); }
+.cmdBox { width: min(640px, 92%); margin-top: 10vh; background: var(--bg); border: 1px solid rgba(255,255,255,0.1); border-radius: .8rem; overflow: hidden; align-self: flex-start; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: modalFadeIn 0.2s ease; }
+#cmdInput { width: 100%; background: rgba(0,0,0,0.3); border: none; outline: none; color: var(--text); font-family: inherit; font-size: 1.05rem; padding: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+#cmdList { max-height: 320px; overflow-y: auto; }
+#cmdList div { padding: .75rem 1.2rem; cursor: pointer; font-size: .9rem; border-bottom: 1px solid rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; }
+#cmdList div:hover, #cmdList div.sel { background: rgba(var(--main-rgb), 0.15); color: var(--main); border-left: 4px solid var(--main); padding-left: calc(1.2rem - 4px); }
+
+.panel { position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 100; display: flex; justify-content: center; overflow-y: auto; padding: 3rem 1rem; backdrop-filter: blur(6px); }
+.panelBox { background: var(--bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 2.2rem; width: min(760px, 95%); max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.8); animation: modalFadeIn 0.2s ease; }
+.panelBox h2 { color: var(--text); margin-top: 0; font-size: 1.8rem; font-weight: 500; display: flex; align-items: center; gap: 0.6rem; }
+.panelBox h3 { color: var(--main); font-size: 0.95rem; margin: 1.8rem 0 .8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.4rem; }
+.row { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+
+/* Custom RGB Theme Controls */
+.rgb-picker-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.color-picker-card { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); padding: 0.8rem 1rem; border-radius: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.color-picker-card label { font-size: 0.85rem; color: var(--sub); }
+.color-picker-card input[type="color"] { width: 100%; height: 38px; border: none; border-radius: 0.4rem; cursor: pointer; background: transparent; }
+
+.panelBox button.action-btn { background: rgba(255,255,255,0.06); padding: 0.6rem 1.2rem; font-size: 0.95rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; margin-top: 1rem; }
+.panelBox button.action-btn:hover { background: rgba(var(--main-rgb), 0.2); color: var(--main); border-color: var(--main); }
+
+/* Toasts */
+#toasts { position: fixed; top: 1.2rem; right: 1.2rem; z-index: 200; display: flex; flex-direction: column; gap: .6rem; pointer-events: none; }
+.toast { background: var(--bg); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid var(--main); border-radius: .5rem; padding: .8rem 1.2rem; font-size: .9rem; color: var(--text); animation: modalFadeIn 0.3s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.4); pointer-events: auto; }
+
+/* Slider styling */
+input[type=range] { -webkit-appearance: none; width: 160px; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--main); cursor: pointer; box-shadow: 0 0 8px var(--main); }
+</style>
+</head>
+<body>
+
+<!-- Background Interactive Canvas -->
+<canvas id="bgCanvas"></canvas>
+
+<div id="toasts"></div>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 34 24"><rect x="0" y="0" width="34" height="24" rx="4"/><rect x="4" y="4" width="5" height="5" fill="var(--bg)"/><rect x="11" y="4" width="5" height="5" fill="var(--bg)"/><rect x="18" y="4" width="5" height="5" fill="var(--bg)"/><rect x="25" y="4" width="5" height="5" fill="var(--bg)"/><rect x="4" y="11" width="5" height="5" fill="var(--bg)"/><rect x="11" y="11" width="12" height="5" fill="var(--bg)"/><rect x="25" y="11" width="5" height="5" fill="var(--bg)"/></svg>
+    monkeytypee
+  </div>
+  <button class="iconBtn" id="btnKbToggle" title="Toggle Virtual Keyboard">⌨</button>
+  <button class="iconBtn" id="btnRgbCustomizer" title="RGB Customizer & Themes">🌈</button>
+  <button class="iconBtn" id="btnSoundProfile" title="Sound Profile">🔊</button>
+  <button class="iconBtn" id="btnAbout" title="About PRO">ℹ</button>
+  <button class="iconBtn" id="btnSettings" title="Settings">⚙</button>
+  <div class="spacer"></div>
+  <button class="iconBtn" data-toast="No new notifications">🔔</button>
+  <button class="iconBtn" data-toast="PRO Account Active">👤</button>
+</header>
+
+<div class="config">
+  <div class="group">
+    <button id="btnPunct">@ punctuation</button>
+    <button id="btnNums"># numbers</button>
+    <button id="btnSuddenDeath">☠ sudden death</button>
+  </div>
+  <div class="group" id="grpMode">
+    <button data-mode="time">⏱ time</button>
+    <button data-mode="words" class="active">A words</button>
+    <button data-mode="quote">❝ quote</button>
+    <button data-mode="zen">△ zen</button>
+    <button data-mode="custom" id="btnCustomMode">✎ custom</button>
+  </div>
+  <div class="group hidden" id="grpTime">
+    <button data-time="15" class="active">15</button>
+    <button data-time="30">30</button>
+    <button data-time="60">60</button>
+    <button data-time="120">120</button>
+    <button id="btnCustomTime" title="Custom time">✱</button>
+  </div>
+  <div class="group" id="grpWords">
+    <button data-words="10" class="active">10</button>
+    <button data-words="25">25</button>
+    <button data-words="50">50</button>
+    <button data-words="100">100</button>
+    <button id="btnCustomWords" title="Custom words">✱</button>
+  </div>
+  <div class="group" id="grpPace">
+    <button data-pace="0" class="active">🏎 pace off</button>
+    <button data-pace="60">60 wpm</button>
+    <button data-pace="100">100 wpm</button>
+    <button data-pace="140">140 wpm</button>
+  </div>
+</div>
+
+<div class="langRow">
+  <button id="langBtn">🌐 <span id="langName">english</span></button>
+  <div id="langMenu" class="hidden"></div>
+  <button id="btnRainbowToggle">✨ Chroma RGB: <span id="rainbowState">OFF</span></button>
+</div>
+
+<main>
+  <!-- Pace Car Progress Bar -->
+  <div class="pace-container hidden" id="paceContainer">
+    <div class="pace-bar-ghost" id="paceGhost"></div>
+    <div class="pace-bar-player" id="pacePlayer"></div>
+  </div>
+  <div class="pace-label hidden" id="paceLabel">Pace Car: 0 WPM</div>
+
+  <div id="testView">
+    <div style="display: flex; justify-content: center; height: 1.5rem; margin-bottom: 0.5rem;">
+      <div class="capsWarn hidden" id="capsWarn">⚠ CAPS LOCK ON</div>
+    </div>
+    <div class="liveRow">
+      <span id="liveMain">10</span>
+      <span id="liveWpm"></span>
+      <span id="liveAcc">100% acc</span>
+    </div>
+    <div class="typing-area" id="typingArea">
+      <div class="words" id="words"></div>
+      <div class="caret" id="caret"></div>
+      <div class="focusOverlay" id="focusOverlay">Click here or press any key to focus</div>
+    </div>
+    
+    <!-- Virtual Mechanical Keyboard Visualizer -->
+    <div class="kb-visualizer hidden" id="kbVisualizer">
+      <div class="kb-row" id="kbRow1"></div>
+      <div class="kb-row" id="kbRow2"></div>
+      <div class="kb-row" id="kbRow3"></div>
+      <div class="kb-row" id="kbRow4">
+        <div class="key space" data-key=" ">space</div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 1.5rem;">
+      <button class="iconBtn" id="btnRestart" title="Restart Test" style="font-size: 1.6rem; padding: 0.6rem 1.2rem;">↻</button>
+    </div>
+  </div>
+
+  <!-- Results View -->
+  <div class="results hidden" id="results">
+    
+    <!-- TOP SECTION UPDATED TO MATCH IMAGE -->
+    <div class="resTop">
+      <div class="resTopControls">
+        <div class="control-item"><span class="icon">🌐</span> <span id="resLangDisplay">english</span></div>
+        <div class="control-item"><span class="icon">✨</span> Chroma RGB: <span id="resChromaDisplay">OFF</span></div>
+      </div>
+      <div class="resScores">
+        <div class="resCard"><div class="lbl">wpm</div><div class="val" id="resWpm">0</div></div>
+        <div class="resCard"><div class="lbl">acc</div><div class="val" id="resAcc">0%</div></div>
+      </div>
+    </div>
+    
+    <canvas id="chart"></canvas>
+    <div class="resGrid" id="resGrid"></div>
+    <div style="width: 100%; max-width: 850px; text-align: left; margin-top: 0.5rem;">
+      <div style="color: var(--sub); font-size: 0.9rem; margin-bottom: 0.4rem;">Slowest Key Latencies:</div>
+      <div class="slowest-keys" id="slowestKeys"></div>
+    </div>
+    <div class="resBtns">
+      <button id="btnRestart2" title="Tab">↻ restart test</button>
+      <button id="btnNext" title="Enter">→ next test</button>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="hints"><span class="kbd">tab</span> or <span class="kbd">enter</span> restart &nbsp;·&nbsp; <span class="kbd">ctrl+backspace</span> delete word &nbsp;·&nbsp; <span class="kbd">esc</span> command palette</div>
+  <div class="links">
+    <a href="#">contact</a><a href="#">support</a><a href="#">github</a><a href="#">discord</a><a href="#">twitter</a><a href="#">terms</a><a href="#">privacy</a>
+  </div>
+</footer>
+
+<!-- Command Palette -->
+<div class="overlay hidden" id="cmdOverlay">
+  <div class="cmdBox">
+    <input id="cmdInput" placeholder="Type a command or change theme…" autocomplete="off">
+    <div id="cmdList"></div>
+  </div>
+</div>
+
+<!-- RGB Theme Customizer Modal -->
+<div class="panel hidden" id="rgbPanel">
+  <div class="panelBox">
+    <h2>🌈 Custom RGB Theme Designer</h2>
+    <h3>Presets</h3>
+    <div class="row" id="presetRow"></div>
+    
+    <h3>Live RGB Color Palette</h3>
+    <div class="rgb-picker-grid">
+      <div class="color-picker-card">
+        <label>Main Accent Color</label>
+        <input type="color" id="pickerMain" value="#00ffcc">
+      </div>
+      <div class="color-picker-card">
+        <label>Background Color</label>
+        <input type="color" id="pickerBg" value="#1c1d1f">
+      </div>
+      <div class="color-picker-card">
+        <label>Subtext Color</label>
+        <input type="color" id="pickerSub" value="#54585d">
+      </div>
+      <div class="color-picker-card">
+        <label>Main Text Color</label>
+        <input type="color" id="pickerText" value="#d1d0c5">
+      </div>
+      <div class="color-picker-card">
+        <label>Error Color</label>
+        <input type="color" id="pickerError" value="#ff4757">
+      </div>
+    </div>
+
+    <h3>Chroma Animated Rainbow Mode</h3>
+    <div class="row" style="align-items: center; gap: 1.5rem;">
+      <button class="action-btn" id="btnToggleChromaModal">Toggle Rainbow RGB</button>
+      <label style="color: var(--sub); font-size: 0.9rem;">Speed: 
+        <input type="range" id="chromaSpeed" min="1" max="10" value="4">
+      </label>
+    </div>
+
+    <h3>&nbsp;</h3>
+    <button class="action-btn" id="btnCloseRgb">Apply &amp; Close (esc)</button>
+  </div>
+</div>
+
+<!-- Settings Panel -->
+<div class="panel hidden" id="settingsPanel">
+  <div class="panelBox">
+    <h2>⚙ Settings & Sound Engine</h2>
+    
+    <h3>Sound Switches Profile</h3>
+    <div class="row" id="soundRow"></div>
+    <div style="margin-top: 0.8rem;">
+      <label style="color: var(--sub); font-size: 0.9rem; display: flex; align-items: center; gap: 1rem;">
+        Volume: <input type="range" id="soundVolume" min="0" max="1" step="0.05" value="0.6">
+      </label>
+    </div>
+
+    <h3>Font Size</h3><div class="row" id="fsRow"></div>
+    <h3>Caret Style</h3><div class="row" id="caretRow"></div>
+    <h3>Toggles</h3><div class="row" id="toggleRow"></div>
+    
+    <h3>&nbsp;</h3>
+    <button class="action-btn" id="btnCloseSettings">Close (esc)</button>
+  </div>
+</div>
+
+<!-- Custom Test Modal -->
+<div class="panel hidden" id="customPanel">
+  <div class="panelBox">
+    <h2>✎ Custom Test</h2>
+    <h3>Custom Text</h3>
+    <textarea id="customText" placeholder="Paste your custom text here..."></textarea>
+    <h3>Or Duration / Word Count</h3>
+    <div class="row">
+      <input class="txt" id="customTime" type="number" min="5" max="600" placeholder="Seconds">
+      <input class="txt" id="customWordsIn" type="number" min="5" max="500" placeholder="Words">
+    </div>
+    <h3>&nbsp;</h3>
+    <div class="row">
+      <button class="action-btn" style="border-color: var(--main); color: var(--main);" id="btnApplyCustom">Apply Custom Test</button>
+      <button class="action-btn" id="btnCancelCustom">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- About Modal -->
+<div class="panel hidden" id="aboutPanel">
+  <div class="panelBox">
+    <h2>ℹ Monkeytypee Edition</h2>
+    <p style="color:var(--text); font-size:1rem; line-height:1.7;">
+      An ultra-premium, offline Monkeytype clone packed with visual effects, custom RGB theme engine, 
+      pro procedural mechanical switch audio, pace car runner, sudden death mode, virtual keyboard visualizer, 
+      and full word-by-word Ctrl+Backspace editing support.
+    </p>
+    <button class="action-btn" id="btnCloseAbout">Close (esc)</button>
+  </div>
+</div>
+
+<script>
+/* ================= DATA & PRESETS ================= */
+const LANGS = {
+  english: ["the","be","to","of","and","a","in","that","have","i","it","for","not","on","with","he","as","you","do","at","this","but","his","by","from","they","we","say","her","she","or","an","will","my","one","all","would","there","their","what","so","up","out","if","about","who","get","which","go","me","when","make","can","like","time","no","just","him","know","take","people","into","year","your","good","some","could","them","see","other","than","then","now","look","only","come","its","over","think","also","back","after","use","two","how","our","work","first","well","way","even","new","want","because","any","these","give","day","most","us","great","between","need","large","often","around","each","important","until","something","under","family","without","before","made","left","part","small","number","much","right","still","own","found","head","stand","page","should","different","must","point","turn","place","where","every","same","another","hand","high","keep","last","long","little","tell","try","ask","men","run","went","are","away","animal","house","help","change","play","spell","air","three","set","put","end","does","mean","old","boy","follow","four","read","big","true","those","sort","result","general","show","interest","group","public","nation","home","late","may","thing","however","man","place"],
+  spanish: ["el","la","de","que","y","a","en","un","ser","se","no","haber","por","con","su","para","como","estar","tener","le","lo","todo","pero","mas","o","si","me","ya","ver","porque","dar","cuando","muy","sin","decir","mi","al","este","ir","nos","una","vez","tambien","hasta","aqui","desde","entre","eso","hoy","vida","otro","puede","gente","casa","dia","nada","dos","parte","tiempo","mismo","mucho","antes","forma","mundo","hombre","ejemplo","gran","estado","contra","cual","casi","lado","aun","tipo","bueno","agua","primer","alto","poco","trabajo","mayor","bien","donde","mientras","quien","cada","fin","modo","menos","estos","hacer","poder","alguno","tal","llevar","dejar","nuevo"],
+  french: ["le","de","un","et","a","il","etre","ne","je","son","que","se","qui","ce","dans","en","du","elle","au","pas","pour","tu","par","plus","on","nous","mais","avec","comme","tout","faire","dire","cette","aller","voir","bien","bon","deux","temps","homme","jour","chose","vie","grand","apres","petit","monde","autre","sans","sous","encore","entre","toujours","trop","ainsi","toute","travail","souvent","quelque","fois","pays","avant","contre","aussi","point","moment","droit","chez","lui","vers","nous","vous","ils","femme","enfant","petit","ville","grand","main","yeux","nuit","matin"],
+  german: ["der","die","und","in","den","von","zu","das","mit","sich","des","auf","fur","ist","im","dem","nicht","ein","eine","als","auch","es","an","werden","aus","er","hat","dass","sie","nach","wird","bei","einer","um","am","sind","noch","wie","einem","uber","einen","so","zum","war","haben","nur","oder","aber","vor","zur","bis","mehr","durch","man","sein","wurde","waren","viel","ich","dann","jetzt","hier","heute","morgen","gestern","immer","wieder","unter","uber","zwischen","durch","gegen","ohne","weil","wenn","also","sehr","gut","schlecht","gross","klein","mein","dein","unser","euer","ihr","wir","du","mich","dich","mir","dir"]
+};
+
+const QUOTES = [
+  {text:"The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.",author:"Steve Jobs"},
+  {text:"Success is not final, failure is not fatal: it is the courage to continue that counts.",author:"Winston Churchill"},
+  {text:"In the middle of difficulty lies opportunity.",author:"Albert Einstein"},
+  {text:"It does not matter how slowly you go as long as you do not stop.",author:"Confucius"},
+  {text:"Code is like humor. When you have to explain it, it's bad.",author:"Cory House"}
+];
+
+const PRESETS = {
+  "Chroma RGB": { bg:"#18191c", sub:"#54585d", text:"#e3e4e8", main:"#00ffcc", error:"#ff4757" },
+  "Cyberpunk": { bg:"#0f051d", sub:"#593b78", text:"#f4eeff", main:"#ff0055", error:"#00f0ff" },
+  "Synthwave 80s": { bg:"#1a102f", sub:"#5d447d", text:"#ffe5f1", main:"#ff71ce", error:"#01cdfe" },
+  "Matrix Code": { bg:"#0d110e", sub:"#254f30", text:"#a8f5bb", main:"#00ff41", error:"#ff2a2a" },
+  "Dracula Dark": { bg:"#282a36", sub:"#6272a4", text:"#f8f8f2", main:"#bd93f9", error:"#ff5555" },
+  "Vaporwave": { bg:"#1f192b", sub:"#584a75", text:"#e8dff5", main:"#ff9ebb", error:"#a0c4ff" },
+  "Sunset Drive": { bg:"#1c1626", sub:"#574463", text:"#fae3e3", main:"#ff9e00", error:"#ff0055" }
+};
+
+/* ================= STATE ================= */
+const state = {
+  mode: "words", time: 15, wordsCount: 10, paceWpm: 0,
+  punctuation: false, numbers: false, suddenDeath: false,
+  language: "english", theme: "Chroma RGB",
+  fontSize: 1.8, caretStyle: "bar",
+  smoothCaret: true, soundProfile: "thocky", soundVolume: 0.6, liveWpm: true,
+  rainbowMode: false, rainbowSpeed: 4, showKb: false,
+  custom: { text: "", time: 0, words: 0 },
+  colors: { main: "#00ffcc", bg: "#1c1d1f", sub: "#54585d", text: "#d1d0c5", error: "#ff4757" }
+};
+
+const runtime = {
+  words: [], wordStates: [], wordEls: [], idx: 0,
+  active: false, over: false, focused: false,
+  start: 0, timer: null, timeLeft: 0,
+  correct: 0, total: 0, incorrect: 0, extra: 0, missed: 0,
+  samples: [], errSamples: [], errThisSec: 0, lastSec: 0,
+  translateY: 0, lineH: 0, quote: null,
+  keyLatencies: {}
+};
+
+const ui = { cmdOpen: false, settingsOpen: false, customOpen: false, aboutOpen: false, langOpen: false, rgbOpen: false };
+
+const $ = id => document.getElementById(id);
+const els = {
+  words: $("words"), caret: $("caret"), area: $("typingArea"), focus: $("focusOverlay"),
+  liveMain: $("liveMain"), liveWpm: $("liveWpm"), liveAcc: $("liveAcc"), caps: $("capsWarn"),
+  results: $("results"), resWpm: $("resWpm"), resAcc: $("resAcc"), resGrid: $("resGrid"), chart: $("chart"),
+  resLangDisplay: $("resLangDisplay"), resChromaDisplay: $("resChromaDisplay"),
+  testView: $("testView"), grpTime: $("grpTime"), grpWords: $("grpWords"),
+  cmdOverlay: $("cmdOverlay"), cmdInput: $("cmdInput"), cmdList: $("cmdList"),
+  settings: $("settingsPanel"), custom: $("customPanel"), about: $("aboutPanel"), rgbPanel: $("rgbPanel"),
+  langMenu: $("langMenu"), langName: $("langName"), toasts: $("toasts"),
+  paceContainer: $("paceContainer"), pacePlayer: $("pacePlayer"), paceGhost: $("paceGhost"), paceLabel: $("paceLabel"),
+  kbVisualizer: $("kbVisualizer"), slowestKeys: $("slowestKeys"), bgCanvas: $("bgCanvas")
+};
+
+/* ================= BACKGROUND CANVAS ================= */
+const bgCtx = els.bgCanvas.getContext("2d");
+let particles = [];
+
+function initCanvas() {
+  els.bgCanvas.width = window.innerWidth;
+  els.bgCanvas.height = window.innerHeight;
+  particles = Array.from({ length: 45 }, () => ({
+    x: Math.random() * els.bgCanvas.width,
+    y: Math.random() * els.bgCanvas.height,
+    r: Math.random() * 2 + 0.5,
+    dx: (Math.random() - 0.5) * 0.4,
+    dy: (Math.random() - 0.5) * 0.4,
+    alpha: Math.random() * 0.4 + 0.1
+  }));
+}
+
+function renderBgCanvas() {
+  bgCtx.clearRect(0, 0, els.bgCanvas.width, els.bgCanvas.height);
+  
+  particles.forEach(p => {
+    p.x += p.dx; p.y += p.dy;
+    if (p.x < 0) p.x = els.bgCanvas.width;
+    if (p.x > els.bgCanvas.width) p.x = 0;
+    if (p.y < 0) p.y = els.bgCanvas.height;
+    if (p.y > els.bgCanvas.height) p.y = 0;
+
+    bgCtx.beginPath();
+    bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(${hexToRgb(state.colors.main)}, ${p.alpha})`;
+    bgCtx.fill();
+  });
+
+  requestAnimationFrame(renderBgCanvas);
+}
+
+function hexToRgb(hex) {
+  hex = hex.replace("#", "");
+  if (hex.length === 3) hex = hex.split("").map(c => c + c).join("");
+  const num = parseInt(hex, 16);
+  return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+}
+
+/* ================= CHROMA RGB ENGINE ================= */
+let rainbowHue = 0;
+function animChroma() {
+  if (state.rainbowMode) {
+    rainbowHue = (rainbowHue + state.rainbowSpeed * 0.5) % 360;
+    const chromaColor = `hsl(${rainbowHue}, 90%, 60%)`;
+    document.documentElement.style.setProperty("--main", chromaColor);
+    document.documentElement.style.setProperty("--main-rgb", hslToRgbStr(rainbowHue, 0.9, 0.6));
+    document.documentElement.style.setProperty("--caret-glow", chromaColor);
+  }
+  requestAnimationFrame(animChroma);
+}
+
+function hslToRgbStr(h, s, l) {
+  let c = (1 - Math.abs(2 * l - 1)) * s,
+      x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+      m = l - c / 2, r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; }
+  else if (h < 120) { r = x; g = c; }
+  else if (h < 180) { g = c; b = x; }
+  else if (h < 240) { g = x; b = c; }
+  else if (h < 300) { r = x; b = c; }
+  else { r = c; b = x; }
+  return `${Math.round((r + m) * 255)}, ${Math.round((g + m) * 255)}, ${Math.round((b + m) * 255)}`;
+}
+
+/* ================= AUDIO SYNTHESIZER ================= */
+let actx = null;
+
+function initAudio() {
+  if (!actx) {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (actx && actx.state === 'suspended') {
+    actx.resume();
+  }
+}
+
+window.addEventListener("click", initAudio);
+window.addEventListener("keydown", initAudio);
+
+function playSwitchSound(type = "char") {
+  if (state.soundProfile === "off" || state.soundVolume <= 0) return;
+  initAudio();
+  if (!actx) return;
+
+  try {
+    const now = actx.currentTime;
+    const vol = state.soundVolume;
+    const profile = state.soundProfile;
+
+    if (type === "error") {
+      const osc = actx.createOscillator();
+      const gain = actx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(140, now);
+      gain.gain.setValueAtTime(vol * 0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.connect(gain);
+      gain.connect(actx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+      return;
+    }
+
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+
+    const bufferSize = Math.floor(actx.sampleRate * 0.015);
+    const buffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = actx.createBufferSource();
+    noise.buffer = buffer;
+    const noiseGain = actx.createGain();
+
+    if (profile === "thocky") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(120 + Math.random() * 30, now);
+      gain.gain.setValueAtTime(vol * 0.6, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+      noiseGain.gain.setValueAtTime(vol * 0.2, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+    } else if (profile === "clicky") {
+      osc.type = "square";
+      osc.frequency.setValueAtTime(1500 + Math.random() * 300, now);
+      gain.gain.setValueAtTime(vol * 0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+
+      noiseGain.gain.setValueAtTime(vol * 0.25, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.01);
+    } else if (profile === "tactile") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(320 + Math.random() * 40, now);
+      gain.gain.setValueAtTime(vol * 0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+      noiseGain.gain.setValueAtTime(vol * 0.15, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+    } else if (profile === "cyber") {
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(800 + Math.random() * 120, now);
+      gain.gain.setValueAtTime(vol * 0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+      noiseGain.gain.setValueAtTime(vol * 0.1, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.01);
+    }
+
+    osc.connect(gain);
+    gain.connect(actx.destination);
+    osc.start(now);
+    osc.stop(now + 0.06);
+
+    noise.connect(noiseGain);
+    noiseGain.connect(actx.destination);
+    noise.start(now);
+    noise.stop(now + 0.02);
+
+  } catch(e) {}
+}
+
+/* ================= HELPERS & UI ================= */
+function toast(msg) {
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+  els.toasts.appendChild(t); setTimeout(() => t.remove(), 2600);
+}
+
+function setFocused(f) {
+  runtime.focused = f;
+  els.focus.classList.toggle("hidden", f);
+  els.caret.classList.toggle("active", f && !runtime.over);
+  if (f) document.body.classList.add("typing");
+  else document.body.classList.remove("typing");
+}
+
+function applyColors(colors) {
+  state.colors = { ...state.colors, ...colors };
+  const r = document.documentElement.style;
+  r.setProperty("--bg", state.colors.bg);
+  r.setProperty("--sub", state.colors.sub);
+  r.setProperty("--text", state.colors.text);
+  r.setProperty("--error", state.colors.error);
+  r.setProperty("--error-rgb", hexToRgb(state.colors.error));
+
+  if (!state.rainbowMode) {
+    r.setProperty("--main", state.colors.main);
+    r.setProperty("--main-rgb", hexToRgb(state.colors.main));
+    r.setProperty("--caret-glow", state.colors.main);
+  }
+  
+  $("pickerMain").value = state.colors.main;
+  $("pickerBg").value = state.colors.bg;
+  $("pickerSub").value = state.colors.sub;
+  $("pickerText").value = state.colors.text;
+  $("pickerError").value = state.colors.error;
+}
+
+function applyPreset(name) {
+  if (!PRESETS[name]) return;
+  state.theme = name;
+  applyColors(PRESETS[name]);
+  toast(`Applied ${name} Theme`);
+  buildRgbPanel();
+}
+
+function buildRgbPanel() {
+  $("presetRow").innerHTML = Object.keys(PRESETS).map(n =>
+    `<button class="action-btn ${n === state.theme ? "active" : ""}" data-preset="${n}">${n}</button>`
+  ).join("");
+}
+
+$("presetRow").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (b && b.dataset.preset) applyPreset(b.dataset.preset);
+});
+
+["Main", "Bg", "Sub", "Text", "Error"].forEach(key => {
+  $(`picker${key}`).addEventListener("input", e => {
+    state.rainbowMode = false;
+    $("rainbowState").textContent = "OFF";
+    const update = {};
+    update[key.toLowerCase()] = e.target.value;
+    applyColors(update);
+  });
+});
+
+$("btnRainbowToggle").addEventListener("click", () => {
+  state.rainbowMode = !state.rainbowMode;
+  $("rainbowState").textContent = state.rainbowMode ? "ON" : "OFF";
+  if (!state.rainbowMode) applyColors({});
+});
+$("btnToggleChromaModal").addEventListener("click", () => $("btnRainbowToggle").click());
+$("chromaSpeed").addEventListener("input", e => state.rainbowSpeed = +e.target.value);
+
+/* ================= KEYBOARD VISUALIZER SETUP ================= */
+const KB_LAYOUT = [
+  ["q","w","e","r","t","y","u","i","o","p"],
+  ["a","s","d","f","g","h","j","k","l"],
+  ["z","x","c","v","b","n","m"]
+];
+
+function initKeyboardVisualizer() {
+  [1,2,3].forEach((rowNum, i) => {
+    const rowEl = $(`kbRow${rowNum}`);
+    rowEl.innerHTML = KB_LAYOUT[i].map(k => `<div class="key" data-key="${k}">${k.toUpperCase()}</div>`).join("");
+  });
+}
+
+function updateKbHighlight(pressedKey = null) {
+  if (!state.showKb) return;
+  document.querySelectorAll(".key").forEach(k => k.classList.remove("active-key", "target-key"));
+  
+  if (pressedKey) {
+    const pk = document.querySelector(`.key[data-key="${pressedKey.toLowerCase()}"]`);
+    if (pk) pk.classList.add("active-key");
+  }
+
+  const currentWord = runtime.words[runtime.idx];
+  const st = runtime.wordStates[runtime.idx];
+  if (currentWord && st) {
+    const targetChar = currentWord[st.typed.length] || " ";
+    const tk = document.querySelector(`.key[data-key="${targetChar.toLowerCase()}"]`);
+    if (tk) tk.classList.add("target-key");
+  }
+}
+
+/* ================= CONTENT GENERATOR ================= */
+const cap = w => w.charAt(0).toUpperCase() + w.slice(1);
+function genWords(n) {
+  const list = LANGS[state.language] || LANGS.english, out = []; let newSent = true;
+  for (let i = 0; i < n; i++) {
+    let w = (state.numbers && Math.random() < .15) ? String(Math.floor(Math.random() * 10000))
+          : list[Math.floor(Math.random() * list.length)];
+    if (state.punctuation) {
+      if (newSent) { w = cap(w); newSent = false; }
+      const r = Math.random();
+      if (r < .06) w += ","; else if (r < .12) { w += "."; newSent = true; }
+      else if (r < .14) w += ";"; else if (r < .15) { w += "!"; newSent = true; }
+    }
+    out.push(w);
+  }
+  return out;
+}
+
+function buildContent() {
+  runtime.quote = null;
+  if (state.mode === "time") runtime.words = genWords(Math.max(120, Math.ceil(state.time * 4.5)));
+  else if (state.mode === "words") runtime.words = genWords(state.wordsCount);
+  else if (state.mode === "quote") { const q = QUOTES[Math.floor(Math.random() * QUOTES.length)]; runtime.quote = q; runtime.words = q.text.split(/\s+/); }
+  else if (state.mode === "zen") runtime.words = [""];
+  else if (state.mode === "custom") {
+    const c = state.custom;
+    if (c.text.trim()) runtime.words = c.text.trim().split(/\s+/);
+    else if (c.time) runtime.words = genWords(Math.max(120, Math.ceil(c.time * 4.5)));
+    else runtime.words = genWords(c.words || 50);
+  }
+}
+
+/* ================= RENDER & SCROLLING ================= */
+function renderWords() {
+  els.words.innerHTML = "";
+  runtime.wordStates = runtime.words.map(w => ({ word: w, typed: "" }));
+  runtime.wordEls = runtime.words.map(w => {
+    const d = document.createElement("div"); d.className = "word";
+    for (const ch of w) { const s = document.createElement("span"); s.className = "letter"; s.textContent = ch; d.appendChild(s); }
+    els.words.appendChild(d); return d;
+  });
+  runtime.idx = 0; runtime.translateY = 0; els.words.style.transform = "translateY(0)";
+  
+  setTimeout(() => {
+    if (runtime.wordEls[0]) {
+      const margin = parseInt(window.getComputedStyle(runtime.wordEls[0]).marginBottom) || 8;
+      runtime.lineH = runtime.wordEls[0].offsetHeight + margin;
+      els.area.style.height = (runtime.lineH * 3) + "px";
+      updateCaret();
+      updateKbHighlight();
+    }
+  }, 10);
+}
+
+function renderCurrentWord(lastAction = null) {
+  const d = runtime.wordEls[runtime.idx];
+  const st = runtime.wordStates[runtime.idx];
+  if (!d || !st) return;
+
+  d.innerHTML = ""; d.classList.remove("error", "neon-shake");
+  let hasError = false;
+
+  for (let i = 0; i < st.word.length; i++) {
+    const s = document.createElement("span"); s.className = "letter"; s.textContent = st.word[i];
+    if (i < st.typed.length) {
+      if (st.typed[i] === st.word[i]) {
+        s.classList.add("correct");
+      } else {
+        s.classList.add("incorrect");
+        hasError = true;
+      }
+    }
+    d.appendChild(s);
+  }
+
+  for (let i = st.word.length; i < st.typed.length; i++) {
+    const s = document.createElement("span"); s.className = "letter extra incorrect"; s.textContent = st.typed[i];
+    d.appendChild(s); hasError = true;
+  }
+
+  if (hasError) {
+    d.classList.add("error");
+    if (lastAction === "error") d.classList.add("neon-shake");
+  }
+}
+
+function updateCaret() {
+  const d = runtime.wordEls[runtime.idx]; if (!d) return;
+  const st = runtime.wordStates[runtime.idx];
+  const letters = d.querySelectorAll(".letter");
+  const area = els.area.getBoundingClientRect();
+  const c = els.caret;
+  if (runtime.focused && !runtime.over) c.classList.add("active");
+
+  d.querySelectorAll(".letter.onCaret").forEach(l => l.classList.remove("onCaret"));
+  const style = state.caretStyle;
+  let r = null;
+
+  if (style === "bar") {
+    if (st.typed.length === 0) {
+      r = letters[0] ? letters[0].getBoundingClientRect() : d.getBoundingClientRect();
+      c.style.left = (r.left - area.left) + "px"; c.style.top = (r.top - area.top) + "px";
+      c.style.width = "3px"; c.style.height = r.height + "px";
+    } else {
+      const li = Math.min(st.typed.length - 1, letters.length - 1);
+      r = letters[li] ? letters[li].getBoundingClientRect() : d.getBoundingClientRect();
+      c.style.left = (r.right - area.left) + "px"; c.style.top = (r.top - area.top) + "px";
+      c.style.width = "3px"; c.style.height = r.height + "px";
+    }
+  } else {
+    const li = Math.min(st.typed.length, letters.length - 1);
+    r = letters[li] ? letters[li].getBoundingClientRect() : d.getBoundingClientRect();
+    c.style.left = (r.left - area.left) + "px"; c.style.top = (r.top - area.top) + "px";
+    c.style.width = r.width + "px"; c.style.height = r.height + "px";
+    if (style === "block" && letters[li]) letters[li].classList.add("onCaret");
+  }
+}
+
+function checkScroll() {
+  const d = runtime.wordEls[runtime.idx]; if (!d || !runtime.lineH) return;
+  const top = d.getBoundingClientRect().top - els.area.getBoundingClientRect().top;
+  if (top >= runtime.lineH * 1.5) {
+    runtime.translateY -= runtime.lineH;
+    els.words.style.transform = `translateY(${runtime.translateY}px)`;
+  }
+}
+
+function checkScrollUp() {
+  const d = runtime.wordEls[runtime.idx]; if (!d || !runtime.lineH) return;
+  const top = d.getBoundingClientRect().top - els.area.getBoundingClientRect().top;
+  if (top < 0 && runtime.translateY < 0) {
+    runtime.translateY += runtime.lineH;
+    els.words.style.transform = `translateY(${runtime.translateY}px)`;
+  }
+}
+
+/* ================= TYPING CORE LOGIC ================= */
+function handleChar(ch) {
+  const st = runtime.wordStates[runtime.idx];
+  st.typed += ch; runtime.total++;
+
+  const now = Date.now();
+  if (!runtime.keyLatencies[ch]) runtime.keyLatencies[ch] = [];
+  runtime.keyLatencies[ch].push(now);
+
+  let isError = false;
+  if (state.mode === "zen") {
+    runtime.correct++;
+  } else if (st.typed.length <= st.word.length) {
+    if (ch === st.word[st.typed.length - 1]) {
+      runtime.correct++;
+    } else {
+      runtime.incorrect++; runtime.errThisSec++;
+      isError = true;
+    }
+  } else {
+    runtime.extra++; runtime.errThisSec++;
+    isError = true;
+  }
+
+  if (isError) {
+    playSwitchSound("error");
+    if (state.suddenDeath) {
+      endTest();
+      toast("☠ Sudden Death Failed!");
+      return;
+    }
+  } else {
+    playSwitchSound("char");
+  }
+
+  renderCurrentWord(isError ? "error" : "char");
+  updateCaret();
+  updateKbHighlight(ch);
+}
+
+function handleSpace() {
+  const st = runtime.wordStates[runtime.idx];
+  if (st.typed.length === 0) return;
+
+  if (st.typed === st.word) {
+    runtime.correct++; runtime.total++;
+  } else {
+    runtime.total++; runtime.missed += Math.max(0, st.word.length - st.typed.length);
+  }
+
+  runtime.idx++;
+  if (runtime.idx >= runtime.wordStates.length) { endTest(); return; }
+  checkScroll(); updateCaret(); updateKbHighlight(); playSwitchSound("char");
+}
+
+function handleBackspace() {
+  const st = runtime.wordStates[runtime.idx];
+  if (st.typed.length > 0) {
+    const rm = st.typed[st.typed.length - 1];
+    st.typed = st.typed.slice(0, -1);
+    runtime.total = Math.max(0, runtime.total - 1);
+
+    if (st.typed.length < st.word.length) {
+      if (rm === st.word[st.typed.length]) runtime.correct = Math.max(0, runtime.correct - 1);
+      else runtime.incorrect = Math.max(0, runtime.incorrect - 1);
+    } else {
+      runtime.extra = Math.max(0, runtime.extra - 1);
+    }
+    renderCurrentWord(); updateCaret(); updateKbHighlight(); playSwitchSound("char");
+  } else if (runtime.idx > 0) {
+    const prevSt = runtime.wordStates[runtime.idx - 1];
+    if (prevSt.typed !== prevSt.word) {
+      runtime.idx--;
+      checkScrollUp(); updateCaret(); updateKbHighlight(); playSwitchSound("char");
+    }
+  }
+}
+
+function handleWordBackspace() {
+  const st = runtime.wordStates[runtime.idx];
+  if (st && st.typed.length > 0) {
+    st.typed = "";
+    renderCurrentWord();
+  } else if (runtime.idx > 0) {
+    runtime.idx--;
+    runtime.wordStates[runtime.idx].typed = "";
+    renderCurrentWord();
+    checkScrollUp();
+  }
+  updateCaret(); updateKbHighlight(); playSwitchSound("char");
+}
+
+/* ================= TIMER, PACE CAR & RESULTS ================= */
+function startTest() {
+  runtime.active = true; runtime.start = Date.now(); runtime.lastSec = 0;
+  runtime.timer = setInterval(tick, 100);
+  document.body.classList.add("typing");
+
+  if (state.paceWpm > 0) {
+    els.paceContainer.classList.remove("hidden");
+    els.paceLabel.classList.remove("hidden");
+    els.paceLabel.textContent = `Pace Car: ${state.paceWpm} WPM`;
+  }
+}
+
+function liveWpmNow() { const el = (Date.now() - runtime.start) / 1000 / 60; return el > 0 ? Math.round(runtime.correct / 5 / el) : 0; }
+function liveRawNow() { const el = (Date.now() - runtime.start) / 1000 / 60; return el > 0 ? Math.round(runtime.total / 5 / el) : 0; }
+
+function tick() {
+  const el = (Date.now() - runtime.start) / 1000;
+  const sec = Math.floor(el);
+
+  if (sec !== runtime.lastSec) {
+    runtime.samples.push({ wpm: liveWpmNow(), raw: liveRawNow() });
+    runtime.errSamples.push(runtime.errThisSec);
+    runtime.errThisSec = 0; runtime.lastSec = sec;
+  }
+
+  if (state.mode === "time" || (state.mode === "custom" && state.custom.time)) {
+    const limit = (state.mode === "time") ? state.time : state.custom.time;
+    runtime.timeLeft = Math.max(0, limit - el);
+    els.liveMain.textContent = Math.ceil(runtime.timeLeft);
+    if (runtime.timeLeft <= 0) { endTest(); return; }
+  } else {
+    els.liveMain.textContent = (runtime.wordStates.length - runtime.idx);
+  }
+
+  if (state.paceWpm > 0) {
+    const totalCharsInTest = runtime.words.join(" ").length;
+    const playerProgress = Math.min(100, (runtime.correct / totalCharsInTest) * 100);
+    const targetChars = (el / 60) * state.paceWpm * 5;
+    const ghostProgress = Math.min(100, (targetChars / totalCharsInTest) * 100);
+
+    els.pacePlayer.style.width = playerProgress + "%";
+    els.paceGhost.style.width = ghostProgress + "%";
+  }
+
+  const acc = runtime.total > 0 ? Math.round(runtime.correct / runtime.total * 100) : 100;
+  els.liveWpm.textContent = state.liveWpm ? liveWpmNow() + " wpm" : "";
+  els.liveAcc.textContent = acc + "% acc";
+}
+
+function endTest() {
+  clearInterval(runtime.timer); runtime.active = false; runtime.over = true;
+  document.body.classList.remove("typing");
+
+  const el = (Date.now() - runtime.start) / 1000, min = el / 60;
+  const wpm = min > 0 ? Math.round(runtime.correct / 5 / min) : 0;
+  const raw = min > 0 ? Math.round(runtime.total / 5 / min) : 0;
+  const acc = runtime.total > 0 ? Math.round(runtime.correct / runtime.total * 100) : 100;
+
+  els.resWpm.textContent = wpm; els.resAcc.textContent = acc + "%";
+  
+  // Update the new top section labels
+  els.resLangDisplay.textContent = state.language;
+  els.resChromaDisplay.textContent = state.rainbowMode ? "ON" : "OFF";
+
+  const rows = [
+    ["test type", `${state.mode} ${state.mode === "time" ? state.time : state.wordsCount}`],
+    ["language", state.language],
+    ["raw wpm", raw],
+    ["characters", `${runtime.correct}/${runtime.incorrect}/${runtime.extra}/${runtime.missed}`]
+  ];
+  
+  // Format grid exactly like the image
+  els.resGrid.innerHTML = `
+    <div class="k">test type</div><div class="v">${state.mode} ${state.mode === "time" ? state.time : state.wordsCount}</div>
+    <div class="k">language</div><div class="v">${state.language}</div>
+    <div class="k">raw wpm</div><div class="v">${raw}</div>
+    <div class="k">characters</div><div class="v">${runtime.correct}/${runtime.incorrect}/${runtime.extra}/${runtime.missed}</div>
+  `;
+
+  const slowest = Object.entries(runtime.keyLatencies).map(([key, times]) => {
+    if (times.length < 2) return null;
+    let diffs = [];
+    for (let i = 1; i < times.length; i++) diffs.push(times[i] - times[i-1]);
+    const avg = Math.round(diffs.reduce((a,b)=>a+b,0) / diffs.length);
+    return { key, avg };
+  }).filter(Boolean).sort((a,b) => b.avg - a.avg).slice(0, 6);
+
+  els.slowestKeys.innerHTML = slowest.length ? slowest.map(s =>
+    `<div class="key-badge">${s.key.toUpperCase()} (${s.avg}ms)</div>`
+  ).join("") : '<div style="color:var(--sub)">Not enough key latency data</div>';
+
+  els.testView.classList.add("hidden"); els.results.classList.remove("hidden");
+  els.caret.classList.remove("active");
+  drawChart();
+}
+
+function drawChart() {
+  const cv = els.chart, dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  cv.width = w * dpr; cv.height = h * dpr;
+  const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr); ctx.clearRect(0, 0, w, h);
+
+  const s = runtime.samples; if (s.length < 2) return;
+  const maxV = Math.max(60, ...s.map(p => Math.max(p.wpm, p.raw))) * 1.15;
+  const X = i => (i / (s.length - 1)) * (w - 50) + 40, Y = v => h - 22 - (v / maxV) * (h - 45);
+
+  ctx.font = "12px Roboto Mono"; ctx.fillStyle = state.colors.sub; ctx.textAlign = "right";
+
+  for (let g = 0; g <= 4; g++) {
+    const v = maxV * g / 4, yy = Y(v);
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.beginPath(); ctx.moveTo(40, yy); ctx.lineTo(w - 10, yy); ctx.stroke();
+    ctx.fillText(Math.round(v), 34, yy + 4);
+  }
+
+  const line = (key, col) => {
+    ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath();
+    s.forEach((p, i) => { const x = X(i), y = Y(p[key]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    ctx.stroke();
+  };
+
+  line("raw", state.colors.sub);
+  line("wpm", state.colors.main);
+}
+
+/* ================= RESTART & CONTROLS ================= */
+function restartTest() {
+  clearInterval(runtime.timer);
+  Object.assign(runtime, {
+    active: false, over: false, correct: 0, total: 0, incorrect: 0, extra: 0, missed: 0,
+    samples: [], errSamples: [], errThisSec: 0, lastSec: 0, translateY: 0, timeLeft: 0, keyLatencies: {}
+  });
+
+  buildContent(); renderWords();
+  els.results.classList.add("hidden"); els.testView.classList.remove("hidden");
+  els.liveMain.textContent = (state.mode === "time") ? state.time : runtime.words.length;
+  els.liveWpm.textContent = "";
+  els.paceContainer.classList.add("hidden");
+  els.paceLabel.classList.add("hidden");
+  setFocused(true);
+}
+
+function setMode(m) {
+  state.mode = m;
+  document.querySelectorAll("#grpMode button").forEach(b => b.classList.toggle("active", b.dataset.mode === m));
+  els.grpTime.classList.toggle("hidden", !(m === "time"));
+  els.grpWords.classList.toggle("hidden", !(m === "words"));
+  if (m === "custom") openCustom(); else restartTest();
+}
+
+document.querySelectorAll("#grpMode button").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
+document.querySelectorAll("#grpTime [data-time]").forEach(b => b.addEventListener("click", () => {
+  state.time = +b.dataset.time;
+  document.querySelectorAll("#grpTime [data-time]").forEach(x => x.classList.toggle("active", x === b));
+  restartTest();
+}));
+document.querySelectorAll("#grpWords [data-words]").forEach(b => b.addEventListener("click", () => {
+  state.wordsCount = +b.dataset.words;
+  document.querySelectorAll("#grpWords [data-words]").forEach(x => x.classList.toggle("active", x === b));
+  restartTest();
+}));
+document.querySelectorAll("#grpPace [data-pace]").forEach(b => b.addEventListener("click", () => {
+  state.paceWpm = +b.dataset.pace;
+  document.querySelectorAll("#grpPace [data-pace]").forEach(x => x.classList.toggle("active", x === b));
+  restartTest();
+}));
+
+$("btnSuddenDeath").addEventListener("click", e => {
+  state.suddenDeath = !state.suddenDeath;
+  e.currentTarget.classList.toggle("active", state.suddenDeath);
+  restartTest();
+});
+
+$("btnKbToggle").addEventListener("click", () => {
+  state.showKb = !state.showKb;
+  els.kbVisualizer.classList.toggle("hidden", !state.showKb);
+  updateKbHighlight();
+});
+
+$("btnPunct").addEventListener("click", e => { state.punctuation = !state.punctuation; e.currentTarget.classList.toggle("active", state.punctuation); restartTest(); });
+$("btnNums").addEventListener("click", e => { state.numbers = !state.numbers; e.currentTarget.classList.toggle("active", state.numbers); restartTest(); });
+$("btnRestart").addEventListener("click", restartTest);
+$("btnRestart2").addEventListener("click", restartTest);
+$("btnNext").addEventListener("click", restartTest);
+
+/* ================= MODALS & COMMAND PALETTE ================= */
+$("btnRgbCustomizer").addEventListener("click", () => { ui.rgbOpen = true; els.rgbPanel.classList.remove("hidden"); });
+$("btnCloseRgb").addEventListener("click", () => { ui.rgbOpen = false; els.rgbPanel.classList.add("hidden"); });
+$("btnSettings").addEventListener("click", () => { ui.settingsOpen = true; els.settings.classList.remove("hidden"); });
+$("btnCloseSettings").addEventListener("click", () => { ui.settingsOpen = false; els.settings.classList.add("hidden"); });
+$("btnAbout").addEventListener("click", () => { ui.aboutOpen = true; els.about.classList.remove("hidden"); });
+$("btnCloseAbout").addEventListener("click", () => { ui.aboutOpen = false; els.about.classList.add("hidden"); });
+
+function openCustom() { ui.customOpen = true; els.custom.classList.remove("hidden"); }
+function closeCustom() { ui.customOpen = false; els.custom.classList.add("hidden"); }
+$("btnCustomMode").addEventListener("click", openCustom);
+$("btnCancelCustom").addEventListener("click", closeCustom);
+$("btnApplyCustom").addEventListener("click", () => {
+  state.custom = { text: $("customText").value, time: +$("customTime").value || 0, words: +$("customWordsIn").value || 0 };
+  closeCustom(); restartTest(); toast("Custom test loaded");
+});
+
+function closeAllOverlays() {
+  ui.settingsOpen = ui.customOpen = ui.aboutOpen = ui.langOpen = ui.rgbOpen = false;
+  els.settings.classList.add("hidden"); els.custom.classList.add("hidden");
+  els.about.classList.add("hidden"); els.langMenu.classList.add("hidden");
+  els.rgbPanel.classList.add("hidden");
+}
+
+/* Command Palette */
+const COMMANDS = [
+  { n: "mode: time", r: () => setMode("time") }, { n: "mode: words", r: () => setMode("words") },
+  { n: "mode: quote", r: () => setMode("quote") }, { n: "mode: zen", r: () => setMode("zen") },
+  ...Object.keys(PRESETS).map(p => ({ n: "theme: " + p, r: () => applyPreset(p) })),
+  { n: "toggle rainbow rgb", r: () => $("btnRainbowToggle").click() },
+  { n: "toggle virtual keyboard", r: () => $("btnKbToggle").click() }
+];
+
+function openCmd() { ui.cmdOpen = true; els.cmdOverlay.classList.remove("hidden"); els.cmdInput.value = ""; renderCmd(""); els.cmdInput.focus(); }
+function closeCmd() { ui.cmdOpen = false; els.cmdOverlay.classList.add("hidden"); setFocused(true); }
+function renderCmd(q) {
+  const filtered = COMMANDS.filter(c => c.n.includes(q.toLowerCase()));
+  els.cmdList.innerHTML = filtered.map((c, i) => `<div data-i="${i}">${c.n}</div>`).join("");
+}
+els.cmdInput.addEventListener("input", e => renderCmd(e.target.value));
+els.cmdList.addEventListener("click", e => { const d = e.target.closest("div"); if (d) { closeCmd(); COMMANDS[+d.dataset.i].r(); } });
+
+/* Sound profile settings */
+const SOUND_PROFILES = ["thocky", "tactile", "clicky", "cyber", "off"];
+$("soundRow").innerHTML = SOUND_PROFILES.map(s =>
+  `<button class="action-btn ${state.soundProfile === s ? "active" : ""}" data-sound="${s}">${s}</button>`
+).join("");
+
+$("soundRow").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (b && b.dataset.sound) {
+    state.soundProfile = b.dataset.sound;
+    document.querySelectorAll("#soundRow button").forEach(x => x.classList.toggle("active", x === b));
+    playSwitchSound("char");
+  }
+});
+$("soundVolume").addEventListener("input", e => state.soundVolume = +e.target.value);
+
+/* Language selector */
+Object.keys(LANGS).forEach(l => {
+  const b = document.createElement("button"); b.textContent = l;
+  b.addEventListener("click", () => { state.language = l; els.langName.textContent = l; els.langMenu.classList.add("hidden"); restartTest(); });
+  els.langMenu.appendChild(b);
+});
+$("langBtn").addEventListener("click", e => { e.stopPropagation(); els.langMenu.classList.toggle("hidden"); });
+
+/* ================= EVENT LISTENERS ================= */
+els.focus.addEventListener("click", () => {
+  initAudio();
+  setFocused(true);
+});
+
+document.addEventListener("keydown", e => {
+  initAudio();
+
+  if (ui.cmdOpen) { if (e.key === "Escape") closeCmd(); return; }
+  if (ui.settingsOpen || ui.customOpen || ui.aboutOpen || ui.rgbOpen) { if (e.key === "Escape") closeAllOverlays(); return; }
+  if (e.key === "Escape") { e.preventDefault(); openCmd(); return; }
+
+  if ((e.ctrlKey || e.metaKey) && e.key === "Backspace") {
+    e.preventDefault();
+    if (runtime.over) return;
+    if (!runtime.active) startTest();
+    handleWordBackspace();
+    return;
+  }
+
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.getModifierState) els.caps.classList.toggle("hidden", !e.getModifierState("CapsLock"));
+
+  if (!runtime.focused) { setFocused(true); return; }
+  if (e.key === "Tab") { e.preventDefault(); restartTest(); return; }
+  if (e.key === "Enter") { e.preventDefault(); restartTest(); return; }
+
+  if (runtime.over) return;
+
+  if (e.key.length === 1) {
+    if (!runtime.active) startTest();
+    if (e.key === " ") { e.preventDefault(); handleSpace(); }
+    else handleChar(e.key);
+  } else if (e.key === "Backspace") {
+    e.preventDefault(); handleBackspace();
+  }
+});
+
+window.addEventListener("resize", () => {
+  initCanvas();
+  updateCaret();
+  if (!els.results.classList.contains("hidden")) drawChart();
+});
+
+/* ================= INITIALIZATION ================= */
+window.onload = function() {
+  initCanvas();
+  renderBgCanvas();
+  animChroma();
+  initKeyboardVisualizer();
+  buildRgbPanel();
+  applyPreset("Chroma RGB");
+  restartTest();
+};
+</script>
+</body>
+</html>
